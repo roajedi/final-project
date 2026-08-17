@@ -42,6 +42,7 @@ jobs:
 
       - name: Start Application Server & Run Tests
         env:
+          NODE_ENV: test
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: postgres
@@ -49,6 +50,6 @@ jobs:
           DB_NAME: logs_db
           PORT: 8080
         run: |
-          npx tsx src/server.ts &
-          npx wait-on http://localhost:8080 --timeout 15000
-          npm test
+          DB_HOST=localhost DB_PORT=5432 DB_USER=postgres DB_PASSWORD=postgrespassword DB_NAME=logs_db PORT=8080 npx tsx src/server.ts &
+          npx wait-on http://localhost:8080 --timeout 20000
+          DB_HOST=localhost npm test
