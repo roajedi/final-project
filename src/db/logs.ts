@@ -59,13 +59,12 @@ function buildFilters(
 
 export async function insertLogs(logs: LogItem[]) {
   if (logs.length === 0) {
-    return [];
+    return 0;
   }
 
   const client = await pool.connect();
 
   try {
-    // تجهيز المصفوفات لاستخدام UNNEST (أسرع بـ 10 أضعاف)
     const timestamps = logs.map((l) => l.timestamp);
     const levels = logs.map((l) => l.level);
     const services = logs.map((l) => l.service);
@@ -92,7 +91,7 @@ export async function insertLogs(logs: LogItem[]) {
       [timestamps, levels, services, messages, attributes]
     );
 
-    return result.rows;
+    return result.rowCount ?? logs.length; 
   } finally {
     client.release();
   }

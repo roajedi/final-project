@@ -83,10 +83,10 @@ app.post(
     }
 
     try {
-      const inserted = await insertLogs(accepted);
+      const insertedCount = await insertLogs(accepted);
 
       res.status(200).json({
-        accepted: inserted.length,
+        accepted: insertedCount,
         rejected,
       });
     } catch (error) {
