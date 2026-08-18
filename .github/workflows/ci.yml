@@ -12,7 +12,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:15-alpine
+        image: postgres:16-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgrespassword
@@ -20,36 +20,59 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
+          --health-cmd "pg_isready -U postgres -d logs_db"
+          --health-interval 5s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Build Application
-        run: npm run build --if-present
+      - name: Typecheck
+        run: npm run typecheck
 
-      - name: Start Application Server & Run Tests
+      - name: Build Application
+        run: npm run build
+
+      - name: Start Application
         env:
           NODE_ENV: test
+          PORT: 8080
+          DATABASE_URL: postgres://postgres:postgrespassword@localhost:5432/logs_db
+          DB_URL: postgres://postgres:postgrespassword@localhost:5432/logs_db
           DB_HOST: localhost
           DB_PORT: 5432
           DB_USER: postgres
           DB_PASSWORD: postgrespassword
           DB_NAME: logs_db
-          PORT: 8080
+          AUTH_ENABLED: false
         run: |
-          DB_HOST=localhost DB_PORT=5432 DB_USER=postgres DB_PASSWORD=postgrespassword DB_NAME=logs_db PORT=8080 npx tsx src/server.ts &
-          npx wait-on http://localhost:8080 --timeout 20000
-          DB_HOST=localhost npm test
+          npx tsx src/server.ts > server.log 2>&1 &
+          echo $! > server.pid
+
+      - name: Wait for Application
+        env:
+          DATABASE_URL: postgres://postgres:postgrespassword@localhost:5432/logs_db
+          DB_URL: postgres://postgres:postgrespassword@localhost:5432/logs_db
+        run: npx --yes wait-on http-get://localhost:8080/health --timeout 30000
+
+      - name: Run API Tests
+        env:
+          BASE_URL: http://localhost:8080
+          DATABASE_URL: postgres://postgres:postgrespassword@localhost:5432/logs_db
+          DB_URL: postgres://postgres:postgrespassword@localhost:5432/logs_db
+          AUTH_ENABLED: false
+        run: npm test
+
+      - name: Show Server Logs on Failure
+        if: failure()
+        run: cat server.log

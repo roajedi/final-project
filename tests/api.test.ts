@@ -48,7 +48,10 @@ describe('API Integration Tests', () => {
     const since = new Date(Date.now() - 3600 * 1000).toISOString();
     const until = new Date().toISOString();
 
-    const res = await fetch(`${BASE_URL}/logs/aggregate?interval=1 minute&since=${since}&until=${until}`);
+    const res = await fetch(
+      `${BASE_URL}/logs/aggregate?interval=1 minute&since=${since}&until=${until}`
+    );
+
     assert.strictEqual(res.status, 200);
   });
 
