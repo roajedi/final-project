@@ -1,3 +1,5 @@
+import cluster from "node:cluster";
+import process from "node:process";
 import express, {
   type ErrorRequestHandler,
   type Request,
@@ -125,7 +127,6 @@ app.get(
   }
 );
 
-
 app.get(
   "/logs/aggregate",
   requireAuth,
@@ -171,47 +172,49 @@ const errorHandler: ErrorRequestHandler = (
 app.use(errorHandler);
 
 async function startServer() {
-  try {
-    await runMigrations();
+  const numWorkers = 2;
 
-    await pool.query("SELECT 1");
+  if (cluster.isPrimary) {
+    try {
+      await runMigrations();
+      await pool.query("SELECT 1");
 
-    console.log(
-      "Database connected and migrations applied."
-    );
+      console.log("Database connected and migrations applied.");
 
-    const server = app.listen(
-      config.port,
-      "0.0.0.0",
-      () => {
-        console.log(
-          `Server running on port ${config.port}`
-        );
+      for (let i = 0; i < numWorkers; i++) {
+        cluster.fork();
       }
-    );
 
-    startRetentionJob();
-
-    const shutdown = async () => {
-      console.log("Shutting down...");
-
-      server.close(async () => {
-        await pool.end();
-        process.exit(0);
+      cluster.on("exit", () => {
+        cluster.fork();
       });
-    };
+    } catch (error) {
+      console.error("Failed to start primary process:", error);
+      await pool.end();
+      process.exit(1);
+    }
+  } else {
+    try {
+      const server = app.listen(config.port, "0.0.0.0", () => {
+        console.log(`Worker ${process.pid} running on port ${config.port}`);
+      });
 
-    process.on("SIGTERM", shutdown);
-    process.on("SIGINT", shutdown);
-  } catch (error) {
-    console.error(
-      "Failed to start server:",
-      error
-    );
+      startRetentionJob();
 
-    await pool.end();
+      const shutdown = async () => {
+        server.close(async () => {
+          await pool.end();
+          process.exit(0);
+        });
+      };
 
-    process.exit(1);
+      process.on("SIGTERM", shutdown);
+      process.on("SIGINT", shutdown);
+    } catch (error) {
+      console.error("Worker failed to start:", error);
+      await pool.end();
+      process.exit(1);
+    }
   }
 }
 

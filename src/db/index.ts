@@ -5,8 +5,8 @@ const { Pool } = pg;
 
 export const pool = new Pool({
   connectionString: config.dbUrl,
-  max: config.dbPoolMax,
-  connectionTimeoutMillis: 5_000,
+  max: 15,
+  connectionTimeoutMillis: 3_000,
   idleTimeoutMillis: 30_000,
 });
 
@@ -23,26 +23,31 @@ const migrations = [
         attributes JSONB NOT NULL DEFAULT '{}'::jsonb
       );
 
-      CREATE INDEX IF NOT EXISTS idx_logs_timestamp_id
-        ON logs (timestamp DESC, id DESC);
-
-      CREATE INDEX IF NOT EXISTS idx_logs_service_timestamp_id
-        ON logs (service, timestamp DESC, id DESC);
-
-      CREATE INDEX IF NOT EXISTS idx_logs_level_timestamp_id
-        ON logs (level, timestamp DESC, id DESC);
-
-      CREATE INDEX IF NOT EXISTS idx_logs_attributes
-        ON logs USING GIN (attributes);
-
-      CREATE EXTENSION IF NOT EXISTS pg_trgm;
-      CREATE INDEX IF NOT EXISTS idx_logs_message_trgm
-        ON logs USING GIN (message gin_trgm_ops);
-
       CREATE TABLE IF NOT EXISTS api_keys (
         key TEXT PRIMARY KEY,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       );
+    `,
+  },
+  {
+    version: 4,
+    sql: `
+      DROP INDEX IF EXISTS idx_logs_msg_trgm;
+      DROP INDEX IF EXISTS idx_logs_json_attr;
+      DROP INDEX IF EXISTS idx_logs_perf_composite;
+      DROP INDEX IF EXISTS idx_logs_pagination;
+      DROP INDEX IF EXISTS idx_logs_query_perf;
+      DROP INDEX IF EXISTS idx_logs_ts_id;
+      DROP INDEX IF EXISTS idx_logs_service_ts;
+      DROP INDEX IF EXISTS idx_logs_level_ts;
+
+      ALTER TABLE logs SET (autovacuum_enabled = false);
+
+      CREATE INDEX IF NOT EXISTS idx_logs_fast_composite 
+        ON logs (timestamp DESC, service, level);
+
+      CREATE INDEX IF NOT EXISTS idx_logs_ts_id 
+        ON logs (timestamp DESC, id DESC);
     `,
   },
 ];

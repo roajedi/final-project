@@ -45,7 +45,7 @@ function buildFilters(
   }
 
   if (params.q !== undefined) {
-    conditions.push(`message ILIKE $${values.length + 1}`);
+    conditions.push(`message LIKE $${values.length + 1}`);
     values.push(`%${params.q}%`);
   }
 
@@ -62,105 +62,43 @@ export async function insertLogs(logs: LogItem[]) {
     return 0;
   }
 
-  const client = await pool.connect();
+  const timestamps: string[] = [];
+  const levels: string[] = [];
+  const services: string[] = [];
+  const messages: string[] = [];
+  const attributes: string[] = [];
 
-  try {
-    const timestamps = logs.map((l) => l.timestamp);
-    const levels = logs.map((l) => l.level);
-    const services = logs.map((l) => l.service);
-    const messages = logs.map((l) => l.message);
-    const attributes = logs.map((l) => JSON.stringify(l.attributes ?? {}));
-
-    const result = await client.query(
-      `
-      INSERT INTO logs (timestamp, level, service, message, attributes)
-      SELECT 
-        t::timestamptz, 
-        l, 
-        s, 
-        m, 
-        a::jsonb
-      FROM UNNEST(
-        $1::text[], 
-        $2::text[], 
-        $3::text[], 
-        $4::text[], 
-        $5::jsonb[]
-      ) AS t(t, l, s, m, a)
-      `,
-      [timestamps, levels, services, messages, attributes]
-    );
-
-    return result.rowCount ?? logs.length; 
-  } finally {
-    client.release();
+  for (let i = 0; i < logs.length; i++) {
+    const l = logs[i];
+    timestamps.push(l.timestamp);
+    levels.push(l.level);
+    services.push(l.service);
+    messages.push(l.message);
+    attributes.push(l.attributes ? JSON.stringify(l.attributes) : '{}');
   }
+
+  const result = await pool.query(
+    `
+    INSERT INTO logs (timestamp, level, service, message, attributes)
+    SELECT 
+      t::timestamptz, 
+      l, 
+      s, 
+      m, 
+      a::jsonb
+    FROM UNNEST(
+      $1::text[], 
+      $2::text[], 
+      $3::text[], 
+      $4::text[], 
+      $5::jsonb[]
+    ) AS t(t, l, s, m, a)
+    `,
+    [timestamps, levels, services, messages, attributes]
+  );
+
+  return result.rowCount ?? logs.length;
 }
-// export async function insertLogs(logs: LogItem[]) {
-//   if (logs.length === 0) {
-//     return [];
-//   }
-
-//   const client = await pool.connect();
-
-//   try {
-//     await client.query("BEGIN");
-
-//     const inserted: unknown[] = [];
-//     const chunkSize = 1000; 
-
-//     for (let start = 0; start < logs.length; start += chunkSize) {
-//       const chunk = logs.slice(start, start + chunkSize);
-
-//       const values: unknown[] = [];
-//       const placeholders: string[] = [];
-
-//       chunk.forEach((log, index) => {
-//         const base = index * 5;
-
-//         placeholders.push(
-//           `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}::jsonb)`
-//         );
-
-//         values.push(
-//           log.timestamp,
-//           log.level,
-//           log.service,
-//           log.message,
-//           JSON.stringify(log.attributes ?? {})
-//         );
-//       });
-
-//       const result = await client.query(
-//         `
-//         INSERT INTO logs
-//           (timestamp, level, service, message, attributes)
-//         VALUES
-//           ${placeholders.join(", ")}
-//         RETURNING
-//           id,
-//           timestamp,
-//           level,
-//           service,
-//           message,
-//           attributes
-//         `,
-//         values
-//       );
-
-//       inserted.push(...result.rows);
-//     }
-
-//     await client.query("COMMIT");
-
-//     return inserted;
-//   } catch (error) {
-//     await client.query("ROLLBACK");
-//     throw error;
-//   } finally {
-//     client.release();
-//   }
-// }
 
 export async function queryLogs(params: LogQueryParams) {
   const values: unknown[] = [];
