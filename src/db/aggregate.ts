@@ -22,35 +22,39 @@ const BUCKET_INTERVALS = {
 } as const;
 
 export async function aggregateLogs(params: AggregateParams) {
-  const values: unknown[] = [];
-
+  const values: unknown[] = [params.since, params.until];
   const conditions: string[] = [
     `timestamp >= $1::timestamptz`,
-    `timestamp < $2::timestamptz`
+    `timestamp < $2::timestamptz`,
   ];
-  values.push(params.since, params.until);
 
   if (params.service !== undefined) {
-    conditions.push(`service = $${values.length + 1}`);
     values.push(params.service);
+    conditions.push(`service = $${values.length}`);
   }
 
   if (params.level !== undefined) {
-    conditions.push(`level = $${values.length + 1}`);
     values.push(params.level);
+    conditions.push(`level = $${values.length}`);
   }
 
   if (params.q !== undefined) {
-    conditions.push(`message LIKE $${values.length + 1}`);
     values.push(`%${params.q}%`);
+    conditions.push(`message LIKE $${values.length}`);
   }
 
   for (const attribute of params.attributes) {
-    conditions.push(`attributes @> $${values.length + 1}::jsonb`);
     values.push(JSON.stringify({ [attribute.key]: attribute.value }));
+    conditions.push(`attributes @> $${values.length}::jsonb`);
   }
 
-  const groupCol = params.groupBy === "service" ? "service" : params.groupBy === "level" ? "level" : null;
+  const groupCol =
+    params.groupBy === "service"
+      ? "service"
+      : params.groupBy === "level"
+      ? "level"
+      : null;
+
   const groupSelect = groupCol ? groupCol : "NULL";
   const interval = BUCKET_INTERVALS[params.bucket];
 
@@ -62,7 +66,7 @@ export async function aggregateLogs(params: AggregateParams) {
     FROM logs
     WHERE ${conditions.join(" AND ")}
     GROUP BY 1, 2
-    ORDER BY start ASC, "group" ASC NULLS FIRST
+    ORDER BY 1 ASC, 2 ASC NULLS FIRST
   `;
 
   const result = await pool.query(query, values);

@@ -35,7 +35,6 @@ const migrations = [
       DROP INDEX IF EXISTS idx_logs_fast_composite;
       DROP INDEX IF EXISTS idx_logs_ts_id;
 
-      -- فهرس خفيف للغاية يغطي الاستعلامات والتجميع مع تقليل وقت الـ INSERT
       CREATE INDEX IF NOT EXISTS idx_logs_ts_service_level 
         ON logs (timestamp, service, level);
 
