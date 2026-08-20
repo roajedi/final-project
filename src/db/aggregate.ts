@@ -50,19 +50,19 @@ export async function aggregateLogs(params: AggregateParams) {
     values.push(JSON.stringify({ [attribute.key]: attribute.value }));
   }
 
-  const hasGroupBy = params.groupBy !== undefined;
-  const groupColumn = hasGroupBy ? (params.groupBy === "service" ? "service" : "level") : "NULL";
+  const groupCol = params.groupBy === "service" ? "service" : params.groupBy === "level" ? "level" : null;
+  const groupSelect = groupCol ? groupCol : "NULL";
   const interval = BUCKET_INTERVALS[params.bucket];
 
   const query = `
     SELECT
       date_bin('${interval}'::interval, timestamp, TIMESTAMPTZ '1970-01-01 00:00:00+00') AS start,
-      ${groupColumn} AS "group",
+      ${groupSelect} AS "group",
       COUNT(*)::bigint AS count
     FROM logs
     WHERE ${conditions.join(" AND ")}
     GROUP BY 1, 2
-    ORDER BY 1 ASC, 2 ASC NULLS FIRST
+    ORDER BY start ASC, "group" ASC NULLS FIRST
   `;
 
   const result = await pool.query(query, values);
