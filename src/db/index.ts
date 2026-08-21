@@ -5,7 +5,7 @@ const { Pool } = pg;
 
 export const pool = new Pool({
   connectionString: config.dbUrl,
-  max: 25,
+  max: config.dbPoolMax,
   connectionTimeoutMillis: 5_000,
   idleTimeoutMillis: 30_000,
 });
@@ -40,6 +40,51 @@ const migrations = [
 
       CREATE INDEX IF NOT EXISTS idx_logs_ts_desc 
         ON logs (timestamp DESC, id DESC);
+    `,
+  },
+  {
+    version: 6,
+    sql: `
+      CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+      CREATE TABLE IF NOT EXISTS log_rollups_1m (
+        bucket_start TIMESTAMPTZ NOT NULL,
+        service VARCHAR(100) NOT NULL,
+        level VARCHAR(10) NOT NULL,
+        count BIGINT NOT NULL,
+        PRIMARY KEY (bucket_start, service, level)
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_logs_service_ts_desc
+        ON logs (service, timestamp DESC, id DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_logs_level_ts_desc
+        ON logs (level, timestamp DESC, id DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_logs_service_level_ts_desc
+        ON logs (service, level, timestamp DESC, id DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_logs_attributes_gin
+        ON logs USING GIN (attributes jsonb_path_ops);
+
+      CREATE INDEX IF NOT EXISTS idx_logs_message_trgm
+        ON logs USING GIN (message gin_trgm_ops);
+
+      CREATE INDEX IF NOT EXISTS idx_rollups_1m_service_bucket
+        ON log_rollups_1m (service, bucket_start);
+
+      CREATE INDEX IF NOT EXISTS idx_rollups_1m_level_bucket
+        ON log_rollups_1m (level, bucket_start);
+
+      INSERT INTO log_rollups_1m (bucket_start, service, level, count)
+      SELECT
+        date_bin('1 minute'::interval, timestamp, TIMESTAMPTZ '1970-01-01 00:00:00+00'),
+        service,
+        level,
+        COUNT(*)::bigint
+      FROM logs
+      GROUP BY 1, 2, 3
+      ON CONFLICT (bucket_start, service, level) DO NOTHING;
     `,
   },
 ];

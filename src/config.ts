@@ -44,7 +44,7 @@ export const config = {
 
   retentionDays: getNonNegativeInt(
     process.env.RETENTION_DAYS,
-    30
+    90
   ),
 
   retentionIntervalMs: getPositiveInt(

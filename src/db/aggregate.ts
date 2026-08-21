@@ -21,7 +21,89 @@ const BUCKET_INTERVALS = {
   "1d": "1 day",
 } as const;
 
-export async function aggregateLogs(params: AggregateParams) {
+function mapAggregateRows(
+  rows: Array<{
+    start: Date | string;
+    group: string | null;
+    count: string | number;
+  }>
+) {
+  return {
+    buckets: rows.map((row) => ({
+      start: new Date(row.start).toISOString(),
+      group: row.group,
+      count: Number(row.count),
+    })),
+  };
+}
+
+function isMinuteAligned(value: string): boolean {
+  const date = new Date(value);
+
+  return (
+    !Number.isNaN(date.getTime()) &&
+    date.getUTCSeconds() === 0 &&
+    date.getUTCMilliseconds() === 0
+  );
+}
+
+function canUseRollups(params: AggregateParams): boolean {
+  return (
+    params.q === undefined &&
+    params.attributes.length === 0 &&
+    isMinuteAligned(params.since) &&
+    isMinuteAligned(params.until)
+  );
+}
+
+async function aggregateFromRollups(params: AggregateParams) {
+  const values: unknown[] = [params.since, params.until];
+  const conditions: string[] = [
+    `bucket_start >= $1::timestamptz`,
+    `bucket_start < $2::timestamptz`,
+  ];
+
+  if (params.service !== undefined) {
+    values.push(params.service);
+    conditions.push(`service = $${values.length}`);
+  }
+
+  if (params.level !== undefined) {
+    values.push(params.level);
+    conditions.push(`level = $${values.length}`);
+  }
+
+  const groupCol =
+    params.groupBy === "service"
+      ? "service"
+      : params.groupBy === "level"
+      ? "level"
+      : null;
+
+  const groupSelect = groupCol ? groupCol : "NULL";
+  const interval = BUCKET_INTERVALS[params.bucket];
+  const bucketExpression =
+    params.bucket === "1m"
+      ? "bucket_start"
+      : `date_bin('${interval}'::interval, bucket_start, TIMESTAMPTZ '1970-01-01 00:00:00+00')`;
+
+  const query = `
+    SELECT
+      ${bucketExpression} AS start,
+      ${groupSelect} AS "group",
+      SUM(count)::bigint AS count
+    FROM log_rollups_1m
+    WHERE ${conditions.join(" AND ")}
+    GROUP BY 1, 2
+    ORDER BY 1 ASC, 2 ASC NULLS FIRST
+  `;
+
+  const result = await pool.query(query, values);
+
+  return mapAggregateRows(result.rows);
+}
+
+async function aggregateFromLogs(params: AggregateParams) {
   const values: unknown[] = [params.since, params.until];
   const conditions: string[] = [
     `timestamp >= $1::timestamptz`,
@@ -40,7 +122,7 @@ export async function aggregateLogs(params: AggregateParams) {
 
   if (params.q !== undefined) {
     values.push(`%${params.q}%`);
-    conditions.push(`message LIKE $${values.length}`);
+    conditions.push(`message ILIKE $${values.length}`);
   }
 
   for (const attribute of params.attributes) {
@@ -71,11 +153,13 @@ export async function aggregateLogs(params: AggregateParams) {
 
   const result = await pool.query(query, values);
 
-  return {
-    buckets: result.rows.map((row) => ({
-      start: new Date(row.start).toISOString(),
-      group: row.group,
-      count: Number(row.count),
-    })),
-  };
+  return mapAggregateRows(result.rows);
+}
+
+export async function aggregateLogs(params: AggregateParams) {
+  if (canUseRollups(params)) {
+    return aggregateFromRollups(params);
+  }
+
+  return aggregateFromLogs(params);
 }
