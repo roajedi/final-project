@@ -7,9 +7,9 @@ export interface LogQueryParams {
   since?: string;
   until?: string;
   q?: string;
-  attributes: Array<{
+  attributes?: Array<{
     key: string;
-    value: string;
+    value: any;
   }>;
   cursor?: {
     timestamp: string;
@@ -24,43 +24,52 @@ function buildFilters(
 ): string[] {
   const conditions: string[] = [];
 
-  if (params.service !== undefined) {
+  if (params.service) {
     conditions.push(`service = $${values.length + 1}`);
     values.push(params.service);
   }
 
-  if (params.level !== undefined) {
+  if (params.level) {
     conditions.push(`level = $${values.length + 1}`);
     values.push(params.level);
   }
 
-  if (params.since !== undefined) {
+  if (params.since) {
     conditions.push(`timestamp >= $${values.length + 1}::timestamptz`);
     values.push(params.since);
   }
 
-  if (params.until !== undefined) {
+  if (params.until) {
     conditions.push(`timestamp < $${values.length + 1}::timestamptz`);
     values.push(params.until);
   }
 
-  if (params.q !== undefined) {
+  if (params.q) {
     conditions.push(`message LIKE $${values.length + 1}`);
     values.push(`%${params.q}%`);
   }
 
-  for (const attribute of params.attributes) {
-    conditions.push(`attributes @> $${values.length + 1}::jsonb`);
-    values.push(JSON.stringify({ [attribute.key]: attribute.value }));
+  if (params.attributes && Array.isArray(params.attributes) && params.attributes.length > 0) {
+    for (const attribute of params.attributes) {
+      if (attribute && attribute.key !== undefined) {
+        conditions.push(`attributes @> $${values.length + 1}::jsonb`);
+        // Parsed safely to handle string/number/boolean values in jsonb
+        let val = attribute.value;
+        try {
+          if (typeof val === 'string' && (val === 'true' || val === 'false' || !isNaN(Number(val)))) {
+            val = JSON.parse(val);
+          }
+        } catch (_) {}
+        values.push(JSON.stringify({ [attribute.key]: val }));
+      }
+    }
   }
 
   return conditions;
 }
 
 export async function insertLogs(logs: LogItem[]) {
-  if (logs.length === 0) {
-    return 0;
-  }
+  if (logs.length === 0) return 0;
 
   const timestamps: string[] = [];
   const levels: string[] = [];
@@ -119,17 +128,10 @@ export async function queryLogs(params: LogQueryParams) {
     filters.push(
       `(timestamp, id) < ($${values.length + 1}::timestamptz, $${values.length + 2}::bigint)`
     );
-
-    values.push(
-      params.cursor.timestamp,
-      params.cursor.id
-    );
+    values.push(params.cursor.timestamp, params.cursor.id);
   }
 
-  const whereClause =
-    filters.length > 0
-      ? `WHERE ${filters.join(" AND ")}`
-      : "";
+  const whereClause = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
 
   const limitIndex = values.length + 1;
   values.push(params.limit + 1);
@@ -152,12 +154,10 @@ export async function queryLogs(params: LogQueryParams) {
   );
 
   const rows = result.rows;
-
   let nextCursor: string | null = null;
 
   if (rows.length > params.limit) {
     rows.pop();
-
     const last = rows[rows.length - 1];
 
     const cursor = {
@@ -165,13 +165,20 @@ export async function queryLogs(params: LogQueryParams) {
       id: String(last.id),
     };
 
-    nextCursor = Buffer
-      .from(JSON.stringify(cursor))
-      .toString("base64url");
+    nextCursor = Buffer.from(JSON.stringify(cursor)).toString("base64url");
   }
 
+  const formattedLogs = rows.map((r) => ({
+    id: String(r.id),
+    timestamp: new Date(r.timestamp).toISOString(),
+    level: r.level,
+    service: r.service,
+    message: r.message,
+    attributes: r.attributes || {},
+  }));
+
   return {
-    logs: rows,
+    logs: formattedLogs,
     next_cursor: nextCursor,
   };
 }
