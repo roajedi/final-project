@@ -43,21 +43,6 @@ const migrations = [
         ON logs (timestamp DESC, id DESC);
     `,
   },
-  {
-  version: 6,
-  sql: `
-    DROP INDEX IF EXISTS idx_logs_ts_service_level;
-
-    CREATE INDEX IF NOT EXISTS idx_logs_service_ts 
-      ON logs (service, timestamp DESC);
-
-    CREATE INDEX IF NOT EXISTS idx_logs_level_ts 
-      ON logs (level, timestamp DESC);
-
-    CREATE INDEX IF NOT EXISTS idx_logs_ts_id 
-      ON logs (timestamp DESC, id DESC);
-  `,
-}
 ];
 
 export async function runMigrations(): Promise<void> {

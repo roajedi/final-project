@@ -9,7 +9,7 @@ export interface LogQueryParams {
   q?: string;
   attributes?: Array<{
     key: string;
-    value: any;
+    value: string;
   }>;
   cursor?: {
     timestamp: string;
@@ -24,34 +24,34 @@ function buildFilters(
 ): string[] {
   const conditions: string[] = [];
 
-  if (params.service) {
+  if (params.service !== undefined && params.service !== null && params.service !== "") {
     conditions.push(`service = $${values.length + 1}`);
     values.push(params.service);
   }
 
-  if (params.level) {
+  if (params.level !== undefined && params.level !== null && params.level !== "") {
     conditions.push(`level = $${values.length + 1}`);
     values.push(params.level);
   }
 
-  if (params.since) {
+  if (params.since !== undefined && params.since !== null && params.since !== "") {
     conditions.push(`timestamp >= $${values.length + 1}::timestamptz`);
     values.push(params.since);
   }
 
-  if (params.until) {
+  if (params.until !== undefined && params.until !== null && params.until !== "") {
     conditions.push(`timestamp < $${values.length + 1}::timestamptz`);
     values.push(params.until);
   }
 
-  if (params.q) {
+  if (params.q !== undefined && params.q !== null && params.q !== "") {
     conditions.push(`message LIKE $${values.length + 1}`);
     values.push(`%${params.q}%`);
   }
 
   if (params.attributes && Array.isArray(params.attributes) && params.attributes.length > 0) {
     for (const attr of params.attributes) {
-      if (attr && attr.key !== undefined) {
+      if (attr && attr.key) {
         conditions.push(`attributes ->> $${values.length + 1} = $${values.length + 2}`);
         values.push(attr.key, String(attr.value));
       }
@@ -167,7 +167,7 @@ export async function queryLogs(params: LogQueryParams) {
     level: r.level,
     service: r.service,
     message: r.message,
-    attributes: r.attributes || {},
+    attributes: typeof r.attributes === 'string' ? JSON.parse(r.attributes) : (r.attributes || {}),
   }));
 
   return {

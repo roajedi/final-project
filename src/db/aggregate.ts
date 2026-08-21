@@ -8,7 +8,7 @@ interface AggregateParams {
   service?: string;
   level?: string;
   q?: string;
-  attributes: Array<{
+  attributes?: Array<{
     key: string;
     value: string;
   }>;
@@ -30,24 +30,28 @@ export async function aggregateLogs(params: AggregateParams) {
   ];
   values.push(params.since, params.until);
 
-  if (params.service !== undefined) {
+  if (params.service !== undefined && params.service !== null && params.service !== "") {
     conditions.push(`service = $${values.length + 1}`);
     values.push(params.service);
   }
 
-  if (params.level !== undefined) {
+  if (params.level !== undefined && params.level !== null && params.level !== "") {
     conditions.push(`level = $${values.length + 1}`);
     values.push(params.level);
   }
 
-  if (params.q !== undefined) {
+  if (params.q !== undefined && params.q !== null && params.q !== "") {
     conditions.push(`message LIKE $${values.length + 1}`);
     values.push(`%${params.q}%`);
   }
 
-  for (const attribute of params.attributes) {
-    conditions.push(`attributes @> $${values.length + 1}::jsonb`);
-    values.push(JSON.stringify({ [attribute.key]: attribute.value }));
+  if (params.attributes && Array.isArray(params.attributes) && params.attributes.length > 0) {
+    for (const attr of params.attributes) {
+      if (attr && attr.key) {
+        conditions.push(`attributes ->> $${values.length + 1} = $${values.length + 2}`);
+        values.push(attr.key, String(attr.value));
+      }
+    }
   }
 
   const groupCol = params.groupBy === "service" ? "service" : params.groupBy === "level" ? "level" : null;
