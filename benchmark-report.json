@@ -1,6 +1,6 @@
 {
   "tool": "@foothill/logs-benchmark",
-  "generatedAt": "2026-08-21T12:46:38.346Z",
+  "generatedAt": "2026-08-21T13:06:09.074Z",
   "mode": "compose",
   "endpoint": "http://127.0.0.1:8080",
   "durationScale": 1,
@@ -17,8 +17,8 @@
     "memorySufficient": true
   },
   "machineSpeed": {
-    "workUnitsPerSecond": 15.82612365477949,
-    "factor": 0.3043485318226825
+    "workUnitsPerSecond": 15.217611849447094,
+    "factor": 0.2926463817201364
   },
   "correctness": {
     "passed": 15,
@@ -121,68 +121,68 @@
     {
       "scenario": "load",
       "status": "completed",
-      "logsPerSecond": 3870,
-      "errorRate": 0.022727272727272707,
-      "latencyP95Ms": 7143.761882149999,
-      "aggregateP95Ms": 33051.29999999995,
-      "readAfterWriteSuccessRate": 0.00980392156862745,
+      "logsPerSecond": 4710,
+      "errorRate": 0,
+      "latencyP95Ms": 5282.283483599999,
+      "aggregateP95Ms": 15288.850000000002,
+      "readAfterWriteSuccessRate": 0.015337423312883436,
       "thresholdPassed": false,
       "consistencyPassed": true,
-      "acceptedRecords": 464400,
-      "visibleRecords": 464400,
+      "acceptedRecords": 565200,
+      "visibleRecords": 565200,
       "offeredLogsPerSecond": 15000,
-      "droppedIterations": 13247,
+      "droppedIterations": 12347,
       "generatorLimited": true,
       "serviceLimited": false
     },
     {
       "scenario": "stress",
       "status": "completed",
-      "logsPerSecond": 2587.3333333333335,
-      "errorRate": 0.5145108831623717,
-      "latencyP95Ms": 11849.879727949981,
-      "aggregateP95Ms": 47607.999999999985,
-      "readAfterWriteSuccessRate": 0.011560693641618497,
+      "logsPerSecond": 3242.6666666666665,
+      "errorRate": 0.5771537859688777,
+      "latencyP95Ms": 7774.9166835,
+      "aggregateP95Ms": 27240,
+      "readAfterWriteSuccessRate": 0.0036429872495446266,
       "thresholdPassed": false,
       "consistencyPassed": true,
-      "acceptedRecords": 388100,
-      "visibleRecords": 388300,
+      "acceptedRecords": 486400,
+      "visibleRecords": 486400,
       "offeredLogsPerSecond": 21000,
-      "droppedIterations": 23505,
+      "droppedIterations": 19996,
       "generatorLimited": true,
       "serviceLimited": false
     },
     {
       "scenario": "spike",
       "status": "completed",
-      "logsPerSecond": 2815,
-      "errorRate": 0.6483447845096815,
-      "latencyP95Ms": 11527.741057999998,
-      "aggregateP95Ms": 27375,
-      "readAfterWriteSuccessRate": 0.01699029126213592,
+      "logsPerSecond": 2985,
+      "errorRate": 0.6876634927278434,
+      "latencyP95Ms": 8939.683694,
+      "aggregateP95Ms": 17761.5,
+      "readAfterWriteSuccessRate": 0.017543859649122806,
       "thresholdPassed": false,
       "consistencyPassed": true,
-      "acceptedRecords": 281500,
-      "visibleRecords": 281500,
+      "acceptedRecords": 298500,
+      "visibleRecords": 298500,
       "offeredLogsPerSecond": 15375,
-      "droppedIterations": 7369,
+      "droppedIterations": 5817,
       "generatorLimited": true,
       "serviceLimited": false
     },
     {
       "scenario": "breakpoint",
       "status": "completed",
-      "logsPerSecond": 2441.6666666666665,
-      "errorRate": 0.6528847292974767,
-      "latencyP95Ms": 62221.69845,
-      "aggregateP95Ms": 48333.5,
-      "readAfterWriteSuccessRate": 0.0106951871657754,
+      "logsPerSecond": 2971.6666666666665,
+      "errorRate": 0.7345343556912083,
+      "latencyP95Ms": 9445.5213176,
+      "aggregateP95Ms": 28305.499999999993,
+      "readAfterWriteSuccessRate": 0.013605442176870748,
       "thresholdPassed": false,
       "consistencyPassed": true,
-      "acceptedRecords": 293000,
-      "visibleRecords": 325100,
+      "acceptedRecords": 356600,
+      "visibleRecords": 356600,
       "offeredLogsPerSecond": 24375,
-      "droppedIterations": 20807,
+      "droppedIterations": 15815,
       "generatorLimited": true,
       "serviceLimited": false
     }
@@ -192,7 +192,7 @@
     "eligibility": {
       "eligible": true
     },
-    "score": 50.056103896103906,
+    "score": 62.28,
     "maximumScore": 100,
     "correctness": {
       "points": 15,
@@ -204,12 +204,12 @@
       }
     },
     "performance": {
-      "points": 9.056103896103908,
+      "points": 21.279999999999998,
       "maximum": 50,
-      "percentage": 18.112207792207816,
+      "percentage": 42.559999999999995,
       "components": {
-        "throughput": 0.10320000000000001,
-        "errors": 0.07792207792207814,
+        "throughput": 0.12560000000000002,
+        "errors": 0.3,
         "latency": 0,
         "sustainedBonus": 0
       }
@@ -223,7 +223,7 @@
         "eventualConsistencyPassedScenarios": 4,
         "eventualConsistencyTotalScenarios": 4,
         "eventualConsistencyPoints": 6,
-        "readAfterWrite": 0.00980392156862745
+        "readAfterWrite": 0.015337423312883436
       }
     },
     "reliability": {
@@ -237,7 +237,7 @@
     },
     "calculation": {
       "correctnessRatio": 1,
-      "uncappedScore": 50.056103896103906,
+      "uncappedScore": 62.28,
       "appliedCap": null
     }
   }
