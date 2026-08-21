@@ -5,7 +5,7 @@ const { Pool } = pg;
 
 export const pool = new Pool({
   connectionString: config.dbUrl,
-  max: 20,
+  max: 25,
   connectionTimeoutMillis: 5_000,
   idleTimeoutMillis: 30_000,
 });
@@ -30,21 +30,17 @@ const migrations = [
     `,
   },
   {
-    version: 6,
+    version: 5,
     sql: `
-      DROP INDEX IF EXISTS idx_logs_ts_service_level;
-      DROP INDEX IF EXISTS idx_logs_ts_desc;
-
-      ALTER TABLE logs SET (autovacuum_enabled = false);
+      DROP INDEX IF EXISTS idx_logs_fast_composite;
+      DROP INDEX IF EXISTS idx_logs_ts_id;
+      DROP INDEX IF EXISTS idx_logs_attrs_gin;
 
       CREATE INDEX IF NOT EXISTS idx_logs_ts_service_level 
-        ON logs (timestamp DESC, service, level);
+        ON logs (timestamp, service, level);
 
-      CREATE INDEX IF NOT EXISTS idx_logs_ts_id 
+      CREATE INDEX IF NOT EXISTS idx_logs_ts_desc 
         ON logs (timestamp DESC, id DESC);
-
-      CREATE INDEX IF NOT EXISTS idx_logs_attrs_gin 
-        ON logs USING gin (attributes jsonb_path_ops);
     `,
   },
 ];

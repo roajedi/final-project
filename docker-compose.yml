@@ -15,7 +15,7 @@ services:
       RETENTION_INTERVAL_MS: "${RETENTION_INTERVAL_MS:-60000}"
       RETENTION_BATCH_SIZE: "${RETENTION_BATCH_SIZE:-5000}"
 
-      DB_POOL_MAX: "${DB_POOL_MAX:-50}" 
+      DB_POOL_MAX: "${DB_POOL_MAX:-25}"
 
     deploy:
       resources:
@@ -46,12 +46,12 @@ services:
     command: >
       postgres
       -c synchronous_commit=off
-      -c max_connections=300
+      -c fsync=off
+      -c full_page_writes=off
+      -c max_connections=200
       -c shared_buffers=256MB
-      -c effective_cache_size=768MB
-      -c work_mem=16MB
+      -c work_mem=32MB
       -c maintenance_work_mem=64MB
-      -c wal_writer_delay=10ms
 
     environment:
       POSTGRES_USER: postgres
