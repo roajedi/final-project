@@ -5,7 +5,7 @@ const { Pool } = pg;
 
 export const pool = new Pool({
   connectionString: config.dbUrl,
-  max: 25,
+  max: 20,
   connectionTimeoutMillis: 5_000,
   idleTimeoutMillis: 30_000,
 });
@@ -30,17 +30,21 @@ const migrations = [
     `,
   },
   {
-    version: 5,
+    version: 6,
     sql: `
-      DROP INDEX IF EXISTS idx_logs_fast_composite;
-      DROP INDEX IF EXISTS idx_logs_ts_id;
+      DROP INDEX IF EXISTS idx_logs_ts_service_level;
+      DROP INDEX IF EXISTS idx_logs_ts_desc;
 
-      -- فهرس خفيف للغاية يغطي الاستعلامات والتجميع مع تقليل وقت الـ INSERT
+      ALTER TABLE logs SET (autovacuum_enabled = false);
+
       CREATE INDEX IF NOT EXISTS idx_logs_ts_service_level 
-        ON logs (timestamp, service, level);
+        ON logs (timestamp DESC, service, level);
 
-      CREATE INDEX IF NOT EXISTS idx_logs_ts_desc 
+      CREATE INDEX IF NOT EXISTS idx_logs_ts_id 
         ON logs (timestamp DESC, id DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_logs_attrs_gin 
+        ON logs USING gin (attributes jsonb_path_ops);
     `,
   },
 ];

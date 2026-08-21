@@ -1,6 +1,6 @@
 {
   "tool": "@foothill/logs-benchmark",
-  "generatedAt": "2026-08-21T08:21:00.322Z",
+  "generatedAt": "2026-08-21T10:09:45.199Z",
   "mode": "compose",
   "endpoint": "http://127.0.0.1:8080",
   "durationScale": 1,
@@ -9,7 +9,7 @@
   "generatorIsolated": true,
   "engine": {
     "cpus": 8,
-    "memoryBytes": 8327397376,
+    "memoryBytes": 8327393280,
     "operatingSystem": "Docker Desktop",
     "requiredCpus": 5.5,
     "sufficient": true,
@@ -17,13 +17,13 @@
     "memorySufficient": true
   },
   "machineSpeed": {
-    "workUnitsPerSecond": 11.532251864380719,
-    "factor": 0.2217740743150138
+    "workUnitsPerSecond": 15.889830508474578,
+    "factor": 0.3055736636245111
   },
   "correctness": {
-    "passed": 15,
+    "passed": 12,
     "total": 15,
-    "cap": null,
+    "cap": 65,
     "checks": [
       {
         "name": "health.status",
@@ -33,21 +33,21 @@
       },
       {
         "name": "ingestion.single",
-        "passed": true,
+        "passed": false,
         "expected": "a valid log is accepted",
-        "actual": "HTTP status 200"
+        "actual": "HTTP status 500"
       },
       {
         "name": "ingestion.batch",
-        "passed": true,
+        "passed": false,
         "expected": "a valid batch is accepted",
-        "actual": "HTTP status 200"
+        "actual": "HTTP status 500"
       },
       {
         "name": "ingestion.partial-invalid",
-        "passed": true,
+        "passed": false,
         "expected": "invalid entries are reported without accepting them",
-        "actual": "HTTP status 200"
+        "actual": "HTTP status 500"
       },
       {
         "name": "ingestion.empty",
@@ -121,68 +121,68 @@
     {
       "scenario": "load",
       "status": "completed",
-      "logsPerSecond": 3948.3333333333335,
-      "errorRate": 0.0316779072143879,
-      "latencyP95Ms": 7372.499477399999,
-      "aggregateP95Ms": 16719.949999999997,
-      "readAfterWriteSuccessRate": 0.016181229773462782,
+      "logsPerSecond": 0,
+      "errorRate": 1,
+      "latencyP95Ms": 6579.67510065,
+      "aggregateP95Ms": 7291.950000000028,
+      "readAfterWriteSuccessRate": null,
       "thresholdPassed": false,
       "consistencyPassed": true,
-      "acceptedRecords": 473800,
-      "visibleRecords": 473800,
+      "acceptedRecords": 0,
+      "visibleRecords": 0,
       "offeredLogsPerSecond": 15000,
-      "droppedIterations": 13106,
+      "droppedIterations": 14815,
       "generatorLimited": true,
       "serviceLimited": false
     },
     {
       "scenario": "stress",
       "status": "completed",
-      "logsPerSecond": 3653.3333333333335,
-      "errorRate": 0.4802731411229135,
-      "latencyP95Ms": 8187.203777150004,
-      "aggregateP95Ms": 36619.399999999994,
-      "readAfterWriteSuccessRate": 0,
+      "logsPerSecond": 0,
+      "errorRate": 1,
+      "latencyP95Ms": 6722.960926799999,
+      "aggregateP95Ms": 6911.599999999996,
+      "readAfterWriteSuccessRate": null,
       "thresholdPassed": false,
       "consistencyPassed": true,
-      "acceptedRecords": 548000,
-      "visibleRecords": 548000,
+      "acceptedRecords": 0,
+      "visibleRecords": 0,
       "offeredLogsPerSecond": 21000,
-      "droppedIterations": 20955,
+      "droppedIterations": 20893,
       "generatorLimited": true,
       "serviceLimited": false
     },
     {
       "scenario": "spike",
       "status": "completed",
-      "logsPerSecond": 3288,
-      "errorRate": 0.6087577344121846,
-      "latencyP95Ms": 9492.6290821,
-      "aggregateP95Ms": 33817.2,
-      "readAfterWriteSuccessRate": 0.014669926650366748,
+      "logsPerSecond": 0,
+      "errorRate": 1,
+      "latencyP95Ms": 31255.6272348,
+      "aggregateP95Ms": 7763.000000000001,
+      "readAfterWriteSuccessRate": null,
       "thresholdPassed": false,
       "consistencyPassed": true,
-      "acceptedRecords": 328800,
-      "visibleRecords": 328800,
+      "acceptedRecords": 0,
+      "visibleRecords": 0,
       "offeredLogsPerSecond": 15375,
-      "droppedIterations": 6970,
+      "droppedIterations": 7689,
       "generatorLimited": true,
       "serviceLimited": false
     },
     {
       "scenario": "breakpoint",
       "status": "completed",
-      "logsPerSecond": 3369.1666666666665,
-      "errorRate": 0.6410051500621559,
-      "latencyP95Ms": 10998.1984478,
-      "aggregateP95Ms": 34790.59999999999,
-      "readAfterWriteSuccessRate": 0.006564551422319475,
+      "logsPerSecond": 0,
+      "errorRate": 1,
+      "latencyP95Ms": 60057.1848218,
+      "aggregateP95Ms": 60057.1,
+      "readAfterWriteSuccessRate": null,
       "thresholdPassed": false,
       "consistencyPassed": true,
-      "acceptedRecords": 404300,
-      "visibleRecords": 405000,
+      "acceptedRecords": 0,
+      "visibleRecords": 0,
       "offeredLogsPerSecond": 24375,
-      "droppedIterations": 17984,
+      "droppedIterations": 20443,
       "generatorLimited": true,
       "serviceLimited": false
     }
@@ -192,23 +192,23 @@
     "eligibility": {
       "eligible": true
     },
-    "score": 46.26444444444444,
+    "score": 38,
     "maximumScore": 100,
     "correctness": {
-      "points": 15,
+      "points": 12,
       "maximum": 15,
-      "percentage": 100,
+      "percentage": 80,
       "components": {
-        "passed": 15,
+        "passed": 12,
         "total": 15
       }
     },
     "performance": {
-      "points": 5.264444444444445,
+      "points": 0,
       "maximum": 50,
-      "percentage": 10.52888888888889,
+      "percentage": 0,
       "components": {
-        "throughput": 0.1052888888888889,
+        "throughput": 0,
         "errors": 0,
         "latency": 0,
         "sustainedBonus": 0
@@ -223,7 +223,7 @@
         "eventualConsistencyPassedScenarios": 4,
         "eventualConsistencyTotalScenarios": 4,
         "eventualConsistencyPoints": 6,
-        "readAfterWrite": 0.016181229773462782
+        "readAfterWrite": 0
       }
     },
     "reliability": {
@@ -236,9 +236,9 @@
       }
     },
     "calculation": {
-      "correctnessRatio": 1,
-      "uncappedScore": 46.26444444444444,
-      "appliedCap": null
+      "correctnessRatio": 0.8,
+      "uncappedScore": 38,
+      "appliedCap": 65
     }
   }
 }

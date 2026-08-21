@@ -52,6 +52,8 @@ export function startRetentionJob(): NodeJS.Timeout {
     }
   };
 
+  void run();
+
   return setInterval(
     () => void run(),
     config.retentionIntervalMs

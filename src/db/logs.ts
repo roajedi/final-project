@@ -45,7 +45,7 @@ function buildFilters(
   }
 
   if (params.q !== undefined) {
-    conditions.push(`message ILIKE $${values.length + 1}`);
+    conditions.push(`message LIKE $${values.length + 1}`);
     values.push(`%${params.q}%`);
   }
 
@@ -79,43 +79,25 @@ export async function insertLogs(logs: LogItem[]) {
 
   const result = await pool.query(
     `
-    WITH inserted AS (
-      INSERT INTO logs (timestamp, level, service, message, attributes)
-      SELECT
-        t::timestamptz,
-        l,
-        s,
-        m,
-        a::jsonb
-      FROM UNNEST(
-        $1::text[],
-        $2::text[],
-        $3::text[],
-        $4::text[],
-        $5::jsonb[]
-      ) AS t(t, l, s, m, a)
-      RETURNING timestamp, level, service
-    ), counted AS (
-      SELECT COUNT(*)::int AS accepted
-      FROM inserted
-    ), rollup AS (
-      INSERT INTO log_rollups_1m (bucket_start, service, level, count)
-      SELECT
-        date_bin('1 minute'::interval, timestamp, TIMESTAMPTZ '1970-01-01 00:00:00+00'),
-        service,
-        level,
-        COUNT(*)::bigint
-      FROM inserted
-      GROUP BY 1, 2, 3
-      ON CONFLICT (bucket_start, service, level)
-      DO UPDATE SET count = log_rollups_1m.count + EXCLUDED.count
-    )
-    SELECT accepted FROM counted
+    INSERT INTO logs (timestamp, level, service, message, attributes)
+    SELECT 
+      t::timestamptz, 
+      l, 
+      s, 
+      m, 
+      a::jsonb
+    FROM UNNEST(
+      $1::text[], 
+      $2::text[], 
+      $3::text[], 
+      $4::text[], 
+      $5::jsonb[]
+    ) AS t(t, l, s, m, a)
     `,
     [timestamps, levels, services, messages, attributes]
   );
 
-  return Number(result.rows[0]?.accepted ?? logs.length);
+  return result.rowCount ?? logs.length;
 }
 
 export async function queryLogs(params: LogQueryParams) {
