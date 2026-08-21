@@ -50,17 +50,10 @@ function buildFilters(
   }
 
   if (params.attributes && Array.isArray(params.attributes) && params.attributes.length > 0) {
-    for (const attribute of params.attributes) {
-      if (attribute && attribute.key !== undefined) {
-        conditions.push(`attributes @> $${values.length + 1}::jsonb`);
-        // Parsed safely to handle string/number/boolean values in jsonb
-        let val = attribute.value;
-        try {
-          if (typeof val === 'string' && (val === 'true' || val === 'false' || !isNaN(Number(val)))) {
-            val = JSON.parse(val);
-          }
-        } catch (_) {}
-        values.push(JSON.stringify({ [attribute.key]: val }));
+    for (const attr of params.attributes) {
+      if (attr && attr.key !== undefined) {
+        conditions.push(`attributes ->> $${values.length + 1} = $${values.length + 2}`);
+        values.push(attr.key, String(attr.value));
       }
     }
   }
