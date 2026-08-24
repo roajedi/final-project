@@ -1,5 +1,3 @@
-أكيد. رتبتلك نفس المحتوى **بدون تغيير جوهري**، لكن صححت تنسيق Markdown بحيث لما تلصقه في `README.md` تظهر العناوين والنقاط والأكواد والجداول بشكل واضح على GitHub.
-
 # Log Ingestion and Query Service
 
 A high-throughput, structured log ingestion and querying engine built with **TypeScript**, **Node.js**, and **PostgreSQL**, fully containerized via **Docker Compose**.
